@@ -9,8 +9,9 @@ type service struct {
 }
 
 type Service interface {
-	AddPostByUserSerial(userSerial, postContent string) error
+	AddPostByUserSerial(userSerial, postContent string) (*stream.AddActivityResponse, error)
 	GetPostByUserSerial(userSerial string) (*stream.FlatFeedResponse, error)
+	GetPostDetailByUserSerial(userSerial string) (*stream.EnrichedFlatFeedResponse, error)
 	DeletePostByPostID(userSerial, postID string) error
 	GetTimelineByUserSerial(userSerial string) (*stream.FlatFeedResponse, error)
 	GetDetailTimelineByUserSerial(userSerial string) (*stream.EnrichedFlatFeedResponse, error)
@@ -27,15 +28,15 @@ func NewService(getstreamClient *stream.Client) Service {
 	}
 }
 
-func (s *service) AddPostByUserSerial(userSerial, postContent string) error {
+func (s *service) AddPostByUserSerial(userSerial, postContent string) (*stream.AddActivityResponse, error) {
 	// Get user feed object
 	userFlatFeed, err := s.getstreamClient.FlatFeed("user", userSerial)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Add post activity to the feed
-	_, err = userFlatFeed.AddActivity(stream.Activity{
+	resp, err := userFlatFeed.AddActivity(stream.Activity{
 		Actor:  userFlatFeed.ID(),
 		Verb:   "post",
 		Object: "1",
@@ -44,7 +45,7 @@ func (s *service) AddPostByUserSerial(userSerial, postContent string) error {
 		},
 	})
 
-	return err
+	return resp, err
 }
 
 func (s *service) GetPostByUserSerial(userSerial string) (*stream.FlatFeedResponse, error) {
@@ -56,6 +57,23 @@ func (s *service) GetPostByUserSerial(userSerial string) (*stream.FlatFeedRespon
 
 	// Get `post` activity
 	return userFlatFeed.GetActivities()
+}
+
+func (s *service) GetPostDetailByUserSerial(userSerial string) (*stream.EnrichedFlatFeedResponse, error) {
+	// Get user feed object
+	userFlatFeed, err := s.getstreamClient.FlatFeed("user", userSerial)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add enriched option
+	opts := []stream.GetActivitiesOption{
+		stream.WithEnrichReactionKindsFilter("like"),
+		stream.WithEnrichReactionCounts(),
+	}
+
+	// Get `enriched post` activity
+	return userFlatFeed.GetEnrichedActivities(opts...)
 }
 
 func (s *service) DeletePostByPostID(userSerial, postID string) error {

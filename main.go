@@ -38,7 +38,8 @@ func main() {
 	{
 		// Posting
 		v1.POST("/post", getstreamHandler.AddPostByUserSerial)
-		v1.GET("/post/:userSerial", getstreamHandler.GetPostByUserSerial)
+		v1.GET("/post/:userSerial/summary", getstreamHandler.GetPostByUserSerial)
+		v1.GET("/post/:userSerial/detail", getstreamHandler.GetPostDetailByUserSerial)
 		v1.DELETE("/post", getstreamHandler.DeletePostByPostID)
 
 		// Timeline

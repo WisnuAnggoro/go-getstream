@@ -10,9 +10,9 @@ type Config struct {
 	Port string `envconfig:"PORT" default:""`
 
 	// GoStream
-	GoStreamAPIKey    string `envconfig:"GOSTREAM_API_KEY" default:"h2rkj5b7hd2r"`
-	GoStreamAPISecret string `envconfig:"GOSTREAM_API_SECRET" default:"6sexn67m88skfp2p7e8m34h3uvrr6589z3cpadneskf8mpvpas8suj7y57j9j5bx"`
-	GoStreamAPIRegion string `envconfig:"GOSTREAM_API_REGION" default:"singapore"`
+	GoStreamAPIKey    string `envconfig:"GOSTREAM_API_KEY" default:""`
+	GoStreamAPISecret string `envconfig:"GOSTREAM_API_SECRET" default:""`
+	GoStreamAPIRegion string `envconfig:"GOSTREAM_API_REGION" default:""`
 }
 
 // Get to get defined configuration

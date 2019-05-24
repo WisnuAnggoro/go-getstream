@@ -16,6 +16,7 @@ type handler struct {
 type GetstreamHandler interface {
 	AddPostByUserSerial(c *gin.Context)
 	GetPostByUserSerial(c *gin.Context)
+	GetPostDetailByUserSerial(c *gin.Context)
 	DeletePostByPostID(c *gin.Context)
 	GetTimelineByUserSerial(c *gin.Context)
 	GetDetailTimelineByUserSerial(c *gin.Context)
@@ -40,13 +41,13 @@ func (h *handler) AddPostByUserSerial(c *gin.Context) {
 		return
 	}
 
-	err := h.getstreamSvc.AddPostByUserSerial(userSerial, postContent)
+	resp, err := h.getstreamSvc.AddPostByUserSerial(userSerial, postContent)
 	if err != nil {
 		AddResponseToContext(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 
-	AddResponseToContext(c, http.StatusCreated, "Feed has been successfully added to timeline!", nil)
+	AddResponseToContext(c, http.StatusCreated, "Feed has been successfully added to timeline!", resp)
 }
 
 func (h *handler) GetPostByUserSerial(c *gin.Context) {
@@ -57,6 +58,22 @@ func (h *handler) GetPostByUserSerial(c *gin.Context) {
 	}
 
 	resp, err := h.getstreamSvc.GetPostByUserSerial(userSerial)
+	if err != nil {
+		AddResponseToContext(c, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+
+	AddResponseToContext(c, http.StatusOK, "success", resp)
+}
+
+func (h *handler) GetPostDetailByUserSerial(c *gin.Context) {
+	userSerial := c.Param("userSerial")
+	if userSerial == "" {
+		AddResponseToContext(c, http.StatusBadRequest, "userSerial is mandatory", nil)
+		return
+	}
+
+	resp, err := h.getstreamSvc.GetPostDetailByUserSerial(userSerial)
 	if err != nil {
 		AddResponseToContext(c, http.StatusInternalServerError, err.Error(), nil)
 		return
