@@ -17,8 +17,9 @@ type Service interface {
 	GetDetailTimelineByUserSerial(userSerial string) (*stream.EnrichedFlatFeedResponse, error)
 	Follow(ownUserSerial, targetUserSerial string) error
 	Unfollow(ownUserSerial, targetUserSerial string) error
-	AddLikeToPostID(likerUserSerial, postID string) error
-	RetrieveLikeDetailOnPostID(postID string) (*stream.FilterReactionResponse, error)
+	AddLikeToPostID(likerUserSerial, postID string) (*stream.Reaction, error)
+	RetrieveLikeDetailOnPostID(postID string, limit int) (*stream.FilterReactionResponse, error)
+	RetrieveLikeDetailOnPostIDWithPagination(postID, nextLikeID string, limit int) (*stream.FilterReactionResponse, error)
 	RemoveLikeByReactionID(reactionID string) error
 }
 
@@ -149,7 +150,7 @@ func (s *service) Unfollow(ownUserSerial, targetUserSerial string) error {
 	return ownUserFlatFeed.Unfollow(targetUserFlatFeed)
 }
 
-func (s *service) AddLikeToPostID(likerUserSerial, postID string) error {
+func (s *service) AddLikeToPostID(likerUserSerial, postID string) (*stream.Reaction, error) {
 	// Create a new `like` reaction
 	r := stream.AddReactionRequestObject{
 		Kind:       "like",
@@ -158,14 +159,22 @@ func (s *service) AddLikeToPostID(likerUserSerial, postID string) error {
 	}
 
 	// Add the reaction to stream
-	_, err := s.getstreamClient.Reactions().Add(r)
-	return err
+	return s.getstreamClient.Reactions().Add(r)
 }
 
-func (s *service) RetrieveLikeDetailOnPostID(postID string) (*stream.FilterReactionResponse, error) {
+func (s *service) RetrieveLikeDetailOnPostID(postID string, limit int) (*stream.FilterReactionResponse, error) {
 	// Retrieve detail likes activity on selected postID
 	return s.getstreamClient.
-		Reactions().Filter(stream.ByActivityID(postID).ByKind("like"))
+		Reactions().Filter(stream.ByActivityID(postID).ByKind("like"), stream.WithLimit(limit))
+}
+
+func (s *service) RetrieveLikeDetailOnPostIDWithPagination(postID, nextLikeID string, limit int) (*stream.FilterReactionResponse, error) {
+	// retrieve the next {limit} likes using the id_lt param
+	filterAttribute := stream.ByActivityID(postID).ByKind("like")
+	limitation := stream.WithLimit(limit)
+	pagination := stream.WithIDLT(nextLikeID)
+
+	return s.getstreamClient.Reactions().Filter(filterAttribute, limitation, pagination)
 }
 
 func (s *service) RemoveLikeByReactionID(reactionID string) error {

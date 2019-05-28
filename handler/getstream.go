@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/wisnuanggoro/go-getstream/getstream"
 
@@ -24,6 +25,7 @@ type GetstreamHandler interface {
 	Unfollow(c *gin.Context)
 	AddLikeToPostID(c *gin.Context)
 	RetrieveLikeDetailOnPostID(c *gin.Context)
+	RetrieveLikeDetailOnPostIDWithPagination(c *gin.Context)
 	RemoveLikeByReactionID(c *gin.Context)
 }
 
@@ -173,23 +175,60 @@ func (h *handler) AddLikeToPostID(c *gin.Context) {
 		return
 	}
 
-	err := h.getstreamSvc.AddLikeToPostID(likerUserSerial, postID)
+	resp, err := h.getstreamSvc.AddLikeToPostID(likerUserSerial, postID)
 	if err != nil {
 		AddResponseToContext(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 
-	AddResponseToContext(c, http.StatusOK, fmt.Sprintf("%s has been successfully liked by %s!", postID, likerUserSerial), nil)
+	AddResponseToContext(c, http.StatusOK, fmt.Sprintf("%s has been successfully liked by %s!", postID, likerUserSerial), resp)
 }
 
 func (h *handler) RetrieveLikeDetailOnPostID(c *gin.Context) {
 	postID := c.Param("postID")
+	pageSizeString := c.Query("pageSize")
+
 	if postID == "" {
 		AddResponseToContext(c, http.StatusBadRequest, "postID is mandatory", nil)
 		return
 	}
 
-	resp, err := h.getstreamSvc.RetrieveLikeDetailOnPostID(postID)
+	pageSize := 10
+	if pageSizeString != "" {
+		i, err := strconv.Atoi(pageSizeString)
+		if err == nil && i > 0 {
+			pageSize = i
+		}
+	}
+
+	resp, err := h.getstreamSvc.RetrieveLikeDetailOnPostID(postID, pageSize)
+	if err != nil {
+		AddResponseToContext(c, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+
+	AddResponseToContext(c, http.StatusOK, "Success", resp)
+}
+
+func (h *handler) RetrieveLikeDetailOnPostIDWithPagination(c *gin.Context) {
+	postID := c.Param("postID")
+	nextLikeID := c.Param("nextLikeID")
+	pageSizeString := c.Query("pageSize")
+
+	if postID == "" {
+		AddResponseToContext(c, http.StatusBadRequest, "postID is mandatory", nil)
+		return
+	}
+
+	pageSize := 10
+	if pageSizeString != "" {
+		i, err := strconv.Atoi(pageSizeString)
+		if err == nil && i > 0 {
+			pageSize = i
+		}
+	}
+
+	resp, err := h.getstreamSvc.RetrieveLikeDetailOnPostIDWithPagination(postID, nextLikeID, pageSize)
 	if err != nil {
 		AddResponseToContext(c, http.StatusInternalServerError, err.Error(), nil)
 		return

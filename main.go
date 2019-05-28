@@ -53,6 +53,7 @@ func main() {
 		// Like Reaction
 		v1.POST("/like", getstreamHandler.AddLikeToPostID)
 		v1.GET("/like/:postID", getstreamHandler.RetrieveLikeDetailOnPostID)
+		v1.GET("/like/:postID/:nextLikeID", getstreamHandler.RetrieveLikeDetailOnPostIDWithPagination)
 		v1.DELETE("/like/:reactionID", getstreamHandler.RemoveLikeByReactionID)
 	}
 	router.Run()
