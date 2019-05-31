@@ -15,6 +15,8 @@ type Service interface {
 	DeletePostByPostID(userSerial, postID string) error
 	GetTimelineByUserSerial(userSerial string) (*stream.FlatFeedResponse, error)
 	GetDetailTimelineByUserSerial(userSerial string) (*stream.EnrichedFlatFeedResponse, error)
+	GetFeedFollowersByUserSerial(userSerial string) (*stream.FollowersResponse, error)
+	GetFollowedFeedsByUserSerial(userSerial string) (*stream.FollowingResponse, error)
 	Follow(ownUserSerial, targetUserSerial string) error
 	Unfollow(ownUserSerial, targetUserSerial string) error
 	AddLikeToPostID(likerUserSerial, postID string) (*stream.Reaction, error)
@@ -117,6 +119,20 @@ func (s *service) GetDetailTimelineByUserSerial(userSerial string) (*stream.Enri
 }
 
 func (s *service) Follow(ownUserSerial, targetUserSerial string) error {
+	err := s.followTimelineFeed(ownUserSerial, targetUserSerial)
+	if err != nil {
+		return err
+	}
+
+	err = s.followUserFeed(ownUserSerial, targetUserSerial)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) followTimelineFeed(ownUserSerial, targetUserSerial string) error {
 	// Get timeline feed object
 	ownUserFlatFeed, err := s.getstreamClient.FlatFeed("timeline", ownUserSerial)
 	if err != nil {
@@ -133,7 +149,38 @@ func (s *service) Follow(ownUserSerial, targetUserSerial string) error {
 	return ownUserFlatFeed.Follow(targetUserFlatFeed)
 }
 
+func (s *service) followUserFeed(ownUserSerial, targetUserSerial string) error {
+	// Get timeline feed object
+	ownUserFlatFeed, err := s.getstreamClient.FlatFeed("user", ownUserSerial)
+	if err != nil {
+		return err
+	}
+
+	// Get user feed object
+	targetUserFlatFeed, err := s.getstreamClient.FlatFeed("user", targetUserSerial)
+	if err != nil {
+		return err
+	}
+
+	// `timeline` of `ownUser` will be filled by all activities of `targetUser`
+	return ownUserFlatFeed.Follow(targetUserFlatFeed)
+}
+
 func (s *service) Unfollow(ownUserSerial, targetUserSerial string) error {
+	err := s.unfollowTimelineFeed(ownUserSerial, targetUserSerial)
+	if err != nil {
+		return err
+	}
+
+	err = s.unfollowUserFeed(ownUserSerial, targetUserSerial)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *service) unfollowTimelineFeed(ownUserSerial, targetUserSerial string) error {
 	// Get timeline feed object
 	ownUserFlatFeed, err := s.getstreamClient.FlatFeed("timeline", ownUserSerial)
 	if err != nil {
@@ -148,6 +195,43 @@ func (s *service) Unfollow(ownUserSerial, targetUserSerial string) error {
 
 	// `timeline` of `ownUser` will no longer be filled by all activities of `targetUser`
 	return ownUserFlatFeed.Unfollow(targetUserFlatFeed)
+}
+
+func (s *service) unfollowUserFeed(ownUserSerial, targetUserSerial string) error {
+	// Get timeline feed object
+	ownUserFlatFeed, err := s.getstreamClient.FlatFeed("user", ownUserSerial)
+	if err != nil {
+		return err
+	}
+
+	// Get user feed object
+	targetUserFlatFeed, err := s.getstreamClient.FlatFeed("user", targetUserSerial)
+	if err != nil {
+		return err
+	}
+
+	// `timeline` of `ownUser` will no longer be filled by all activities of `targetUser`
+	return ownUserFlatFeed.Unfollow(targetUserFlatFeed)
+}
+
+func (s *service) GetFeedFollowersByUserSerial(userSerial string) (*stream.FollowersResponse, error) {
+	// Get user feed object
+	userFlatFeed, err := s.getstreamClient.FlatFeed("user", userSerial)
+	if err != nil {
+		return nil, err
+	}
+	// list followers
+	return userFlatFeed.GetFollowers(stream.WithFollowersOffset(0), stream.WithFollowersLimit(10))
+}
+
+func (s *service) GetFollowedFeedsByUserSerial(userSerial string) (*stream.FollowingResponse, error) {
+	// Get user feed object
+	userFlatFeed, err := s.getstreamClient.FlatFeed("user", userSerial)
+	if err != nil {
+		return nil, err
+	}
+	// Retrieve last 10 feeds followed by user_feed_1
+	return userFlatFeed.GetFollowing(stream.WithFollowingOffset(0), stream.WithFollowingLimit(10))
 }
 
 func (s *service) AddLikeToPostID(likerUserSerial, postID string) (*stream.Reaction, error) {
@@ -169,7 +253,7 @@ func (s *service) RetrieveLikeDetailOnPostID(postID string, limit int) (*stream.
 }
 
 func (s *service) RetrieveLikeDetailOnPostIDWithPagination(postID, nextLikeID string, limit int) (*stream.FilterReactionResponse, error) {
-	// retrieve the next {limit} likes using the id_lt param
+	// Retrieve the next {limit} likes using the id_lt param
 	filterAttribute := stream.ByActivityID(postID).ByKind("like")
 	limitation := stream.WithLimit(limit)
 	pagination := stream.WithIDLT(nextLikeID)

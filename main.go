@@ -49,6 +49,8 @@ func main() {
 		// Follower
 		v1.POST("/user/follow", getstreamHandler.Follow)
 		v1.POST("/user/unfollow", getstreamHandler.Unfollow)
+		v1.GET("/user/follower/:userSerial", getstreamHandler.GetFeedFollowersByUserSerial)
+		v1.GET("/user/followed/:userSerial", getstreamHandler.GetFollowedFeedsByUserSerial)
 
 		// Like Reaction
 		v1.POST("/like", getstreamHandler.AddLikeToPostID)

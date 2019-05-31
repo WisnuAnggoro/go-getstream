@@ -23,6 +23,8 @@ type GetstreamHandler interface {
 	GetDetailTimelineByUserSerial(c *gin.Context)
 	Follow(c *gin.Context)
 	Unfollow(c *gin.Context)
+	GetFeedFollowersByUserSerial(c *gin.Context)
+	GetFollowedFeedsByUserSerial(c *gin.Context)
 	AddLikeToPostID(c *gin.Context)
 	RetrieveLikeDetailOnPostID(c *gin.Context)
 	RetrieveLikeDetailOnPostIDWithPagination(c *gin.Context)
@@ -165,6 +167,38 @@ func (h *handler) Unfollow(c *gin.Context) {
 	}
 
 	AddResponseToContext(c, http.StatusOK, fmt.Sprintf("%s has successfully unfollowed %s!", ownUserSerial, targetUserSerial), nil)
+}
+
+func (h *handler) GetFeedFollowersByUserSerial(c *gin.Context) {
+	userSerial := c.Param("userSerial")
+	if userSerial == "" {
+		AddResponseToContext(c, http.StatusBadRequest, "userSerial is are mandatory", nil)
+		return
+	}
+
+	resp, err := h.getstreamSvc.GetFeedFollowersByUserSerial(userSerial)
+	if err != nil {
+		AddResponseToContext(c, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+
+	AddResponseToContext(c, http.StatusOK, "Success", resp)
+}
+
+func (h *handler) GetFollowedFeedsByUserSerial(c *gin.Context) {
+	userSerial := c.Param("userSerial")
+	if userSerial == "" {
+		AddResponseToContext(c, http.StatusBadRequest, "userSerial is are mandatory", nil)
+		return
+	}
+
+	resp, err := h.getstreamSvc.GetFollowedFeedsByUserSerial(userSerial)
+	if err != nil {
+		AddResponseToContext(c, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+
+	AddResponseToContext(c, http.StatusOK, "Success", resp)
 }
 
 func (h *handler) AddLikeToPostID(c *gin.Context) {
