@@ -9,7 +9,7 @@ type service struct {
 }
 
 type Service interface {
-	AddPostByUserSerial(userSerial, postContent string) (*stream.AddActivityResponse, error)
+	AddPostByUserSerial(userSerial, postContent, postType string) (*stream.AddActivityResponse, error)
 	GetPostByUserSerial(userSerial string) (*stream.FlatFeedResponse, error)
 	GetPostDetailByUserSerial(userSerial string) (*stream.EnrichedFlatFeedResponse, error)
 	DeletePostByPostID(userSerial, postID string) error
@@ -31,7 +31,7 @@ func NewService(getstreamClient *stream.Client) Service {
 	}
 }
 
-func (s *service) AddPostByUserSerial(userSerial, postContent string) (*stream.AddActivityResponse, error) {
+func (s *service) AddPostByUserSerial(userSerial, postContent, postType string) (*stream.AddActivityResponse, error) {
 	// Get user feed object
 	userFlatFeed, err := s.getstreamClient.FlatFeed("user", userSerial)
 	if err != nil {
@@ -44,7 +44,8 @@ func (s *service) AddPostByUserSerial(userSerial, postContent string) (*stream.A
 		Verb:   "post",
 		Object: "1",
 		Extra: map[string]interface{}{
-			"post": postContent,
+			"post":     postContent,
+			"postType": postType,
 		},
 	})
 

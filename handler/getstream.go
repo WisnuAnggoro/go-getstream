@@ -40,12 +40,13 @@ func NewGetstreamHandler(getstreamSvc getstream.Service) GetstreamHandler {
 func (h *handler) AddPostByUserSerial(c *gin.Context) {
 	userSerial := c.Query("userSerial")
 	postContent := c.Query("postContent")
-	if userSerial == "" || postContent == "" {
-		AddResponseToContext(c, http.StatusBadRequest, "userSerial and postContent are mandatory", nil)
+	postType := c.Query("postType")
+	if userSerial == "" || postContent == "" || postType == "" {
+		AddResponseToContext(c, http.StatusBadRequest, "userSerial, postContent, and postType are mandatory", nil)
 		return
 	}
 
-	resp, err := h.getstreamSvc.AddPostByUserSerial(userSerial, postContent)
+	resp, err := h.getstreamSvc.AddPostByUserSerial(userSerial, postContent, postType)
 	if err != nil {
 		AddResponseToContext(c, http.StatusInternalServerError, err.Error(), nil)
 		return
